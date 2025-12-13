@@ -1,0 +1,59 @@
+{
+	"pages": [
+		//pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		{
+			"path": "pages/home/home",
+			"style": {
+				"navigationBarTitleText": "记忆点APP"
+			}
+		},
+		{
+			"path": "pages/article-reading/article-reading",
+			"style": {
+				"navigationBarTitleText": "文章阅读"
+			}
+		},
+		{
+			"path": "pages/plan-edit/plan-edit",
+			"style": {
+				"navigationBarTitleText": "计划编辑"
+			}
+		},
+		{
+			"path": "pages/recitation-plan/recitation-plan",
+			"style": {
+				"navigationBarTitleText": "背诵计划"
+			}
+		},
+		{
+			"path": "pages/recitation/recitation",
+			"style": {
+				"navigationBarTitleText": "背诵"
+			}
+		},
+		{
+			"path": "pages/article-detail/article-detail",
+			"style": {
+				"navigationBarTitleText": "文章详情"
+			}
+		},
+		{
+			"path": "pages/about/about",
+			"style": {
+				"navigationBarTitleText": "关于APP"
+			}
+		}
+	],
+	"easycom": {
+		"autoScan": true,
+		"custom": {
+			"^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue"
+		}
+	},
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "记忆点APP",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	}
+}
