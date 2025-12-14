@@ -141,7 +141,7 @@ import { InfiniteScroll } from "@/components";
 
 interface PlanItem {
 	type: 'article' | 'paragraph';
-	content: string;
+	content?: string;
 	articleId?: string;
 	paragraphIndices?: number[];
 }
@@ -363,7 +363,9 @@ const savePlan = () => {
 	const plan: Plan = {
 		id: planId.value || Date.now().toString(),
 		name: planName.value.trim(),
-		items: items.value,
+		items: items.value.map(e => ({
+			...e, content: undefined
+		})),
 	};
 	if (isEdit.value) {
 		const index = plans.findIndex((p: Plan) => p.id === planId.value);

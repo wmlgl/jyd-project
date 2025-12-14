@@ -50,4 +50,18 @@ export default defineConfig({
 			},
 		},
 	},
+	// 修复构建配置
+	build: {
+		target: "es2022",
+	},
+	// 配置 esbuild 选项
+	esbuild: {
+		target: "es2022",
+	},
+	// 配置优化选项
+	optimizeDeps: {
+		esbuildOptions: {
+			target: "es2022",
+		},
+	},
 });
