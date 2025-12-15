@@ -147,4 +147,4 @@ npm run build:h5
 趣味背诵：中级难度，方框需要用户输入拼音首字母
 
 ## ❤ 支持作者 ❤
-<img src="./src/static/alipay.png" height="200px" /><img src="./src/static/wxpay.png" height="200px" style="margin-left:2em" />
+<img src="./src/static/alipay.png" height="300px" /><img src="./src/static/wxpay.png" height="300px" style="margin-left:2em" />
