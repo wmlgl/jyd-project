@@ -20,19 +20,19 @@
 							<text class="card-title">文章阅读</text>
 							<text class="card-desc">浏览和管理您的文章库</text>
 						</view>
-						
+
 						<view class="feature-card" @click="continueReading()">
 							<view class="card-icon">🔖</view>
 							<text class="card-title">继续阅读</text>
 							<text class="card-desc">回到上次阅读位置</text>
 						</view>
-						
+
 						<view class="feature-card" @click="navigateTo('/pages/recitation-plan/recitation-plan')">
 							<view class="card-icon">📝</view>
 							<text class="card-title">背诵计划</text>
 							<text class="card-desc">制定和管理背诵任务</text>
 						</view>
-						
+
 						<view class="feature-card" @click="navigateTo('/pages/about/about')">
 							<view class="card-icon">ℹ️</view>
 							<text class="card-title">关于APP</text>
@@ -54,6 +54,10 @@
 							<text class="stat-label">背诵计划</text>
 						</view>
 						<view class="stat-item">
+							<text class="stat-value">{{ formatTime(stats.totalTimes) }}</text>
+							<text class="stat-label">总学习时长</text>
+						</view>
+						<view class="stat-item">
 							<text class="stat-value">{{ stats.accuracy }}%</text>
 							<text class="stat-label">平均正确率</text>
 						</view>
@@ -64,10 +68,12 @@
 				<view class="section">
 					<text class="section-title">最近学习</text>
 					<view class="recent-list">
-						<view v-for="record in recentRecords" :key="record.id" class="recent-item" @click="goToPlan(record.planId)">
+						<view v-for="record in recentRecords" :key="record.id" class="recent-item"
+							@click="goToPlan(record.planId)">
 							<view class="recent-content">
 								<text class="recent-title">{{ record.planName }}</text>
-								<text class="recent-info">{{ record.correct ? '背诵完成' : '背诵中' }} · {{ formatTime(record.time) }}</text>
+								<text class="recent-info">{{ record.correct ? '背诵完成' : '背诵中' }} · {{
+									formatTime(record.time) }}</text>
 							</view>
 							<text class="recent-time">{{ formatRelativeTime(record.date) }}</text>
 						</view>
@@ -98,6 +104,7 @@ interface Stats {
 	articlesCount: number;
 	plansCount: number;
 	accuracy: number;
+	totalTimes: number;
 }
 
 // 定义最近学习记录接口
@@ -113,7 +120,8 @@ interface RecentRecord {
 const stats = ref<Stats>({
 	articlesCount: 0,
 	plansCount: 0,
-	accuracy: 0
+	accuracy: 0,
+	totalTimes: 0
 });
 
 const recentRecords = ref<RecentRecord[]>([]);
@@ -130,7 +138,7 @@ const continueReading = () => {
 
 	if (articleIds.length > 0) {
 		// 找到最近阅读的文章（基于时间戳）
-		let latestArticle = null;
+		let latestArticle: any = null;
 		let latestTime = 0;
 
 		articleIds.forEach((id) => {
@@ -183,8 +191,10 @@ const calculateStats = () => {
 	if (records.length > 0) {
 		const correctCount = records.filter((r: any) => r.correct).length;
 		stats.value.accuracy = Math.round((correctCount / records.length) * 100);
+		stats.value.totalTimes = records.reduce((acc, r) => acc + r.time, 0);
 	} else {
 		stats.value.accuracy = 0;
+		stats.value.totalTimes = 0;
 	}
 };
 
@@ -192,7 +202,7 @@ const calculateStats = () => {
 const loadRecentRecords = () => {
 	const records = uni.getStorageSync("recitationRecords") || [];
 	const plans = uni.getStorageSync("plans") || [];
-	
+
 	// 获取最近的5条记录
 	const recent = records
 		.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -209,7 +219,7 @@ const loadRecentRecords = () => {
 				date: record.date
 			};
 		});
-		
+
 	recentRecords.value = recent;
 };
 
@@ -264,7 +274,8 @@ onMounted(() => {
 	display: flex;
 	flex-direction: column;
 	background-color: #f5f6f8;
-	padding-bottom: 140rpx; /* 为底部固定栏留出空间 */
+	padding-bottom: 140rpx;
+	/* 为底部固定栏留出空间 */
 }
 
 /* 标题区域样式 */
@@ -486,11 +497,11 @@ onMounted(() => {
 		max-width: 750rpx;
 		margin: 0 auto;
 	}
-	
+
 	.header-section {
 		border-radius: 0 0 16rpx 16rpx;
 	}
-	
+
 	.fixed-bottom-bar {
 		max-width: 750rpx;
 		left: 50%;

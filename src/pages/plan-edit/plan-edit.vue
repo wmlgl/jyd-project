@@ -83,7 +83,8 @@
 					<view class="action-area">
 						<button @click="addItem" class="add-item-btn" :disabled="!canAddItem">
 							<text class="btn-icon">+</text>
-							<text class="btn-text">添加{{ itemTypes[selectedTypeIndex] === 'article' ? '文章' : '段落' }}</text>
+							<text class="btn-text">添加{{ itemTypes[selectedTypeIndex] === 'article' ? '文章' : '段落'
+								}}</text>
 						</button>
 					</view>
 				</view>
@@ -137,7 +138,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
-import { InfiniteScroll } from "@/components";
 
 interface PlanItem {
 	type: 'article' | 'paragraph';
@@ -169,9 +169,6 @@ const planId = ref("");
 const articles = ref<Article[]>([]);
 const selectedArticleIndex = ref(-1);
 const selectedParagraphIndices = ref<number[]>([]);
-// 添加对无限滚动组件的引用
-const infiniteScrollRef = ref<InstanceType<typeof InfiniteScroll> | null>(null);
-
 // 分页加载相关
 const pageSize = ref(10); // 每页显示段落数
 const currentPage = ref(1); // 当前页码
@@ -192,10 +189,6 @@ watch(selectedArticleIndex, (newVal) => {
 		totalParagraphs.value = article.content.split('\n').filter(p => p.trim().length > 0);
 		currentPage.value = 1; // 重置为第一页
 		hasMore.value = totalParagraphs.value.length > pageSize.value; // 根据总长度设置是否有更多数据
-		// 重置后需要强制组件重新计算
-		nextTick(() => {
-			infiniteScrollRef.value?.reset();
-		});
 	} else {
 		totalParagraphs.value = [];
 	}
@@ -230,23 +223,9 @@ const loadMoreParagraphs = () => {
 	isLoading.value = false;
 };
 
-// 添加新方法以适配InfiniteScroll组件
-const onItemClick = (index: number) => {
-	// 计算全局索引
-	const globalIndex = (currentPage.value - 1) * pageSize.value + index;
-	toggleParagraphSelection(globalIndex);
-};
-
 // 修改 isSelected 方法以使用全局索引
 const isSelected = (globalIndex: number) => {
 	return selectedParagraphIndices.value.includes(globalIndex);
-};
-
-// 修改 getItemClass 方法以使用全局索引
-const getItemClass = (index: number) => {
-	// 计算全局索引
-	const globalIndex = (currentPage.value - 1) * pageSize.value + index;
-	return ["paragraph-card", { selected: isSelected(globalIndex) }];
 };
 
 const canSave = computed(() => {

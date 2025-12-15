@@ -1,0 +1,31 @@
+{
+	"name": "记忆点",
+	"short_name": "记忆点",
+	"description": "一个基于uniapp的开源本地背诵文章应用，支持文章阅读、背诵计划、背诵效果分析等功能",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#ffffff",
+	"theme_color": "#4a90e2",
+	"orientation": "portrait",
+	"scope": "/",
+	"lang": "zh-CN",
+	"icons": [
+		{
+			"src": "/jyd-project/static/icons/icon-144x144.png",
+			"sizes": "72x72",
+			"type": "image/png",
+			"purpose": "any maskable"
+		}
+	],
+	"categories": [
+		"education",
+		"productivity"
+	],
+	"screenshots": [
+		{
+			"src": "/jyd-project/static/icons/screenshots/screenshot-1.png",
+			"sizes": "1280x720",
+			"type": "image/png"
+		}
+	]
+}

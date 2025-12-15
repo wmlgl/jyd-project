@@ -2,7 +2,7 @@
 	"name": "jyd-project",
 	"version": "0.0.1",
 	"type": "module",
-	"description": "记忆点APP - 一个基于uniapp的开源本地背诵文章应用，支持文章阅读、背诵计划、背诵效果分析等功能",
+	"description": "记忆点 - 一个基于uniapp的开源本地背诵文章应用，支持文章阅读、背诵计划、背诵效果分析等功能",
 	"keywords": ["uniapp", "背诵", "记忆", "文章阅读", "学习工具"],
 	"author": "记忆点开发团队",
 	"license": "MIT",

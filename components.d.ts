@@ -18,6 +18,8 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Text: typeof import('./src/components/Text.vue')['default']
+    UniPopup: typeof import('@dcloudio/uni-ui/lib/uni-popup/uni-popup.vue')['default']
+    UniPopupDialog: typeof import('@dcloudio/uni-ui/lib/uni-popup-dialog/uni-popup-dialog.vue')['default']
     View: typeof import('./src/components/View.vue')['default']
   }
 }
@@ -30,5 +32,7 @@ declare global {
   const RouterLink: typeof import('vue-router')['RouterLink']
   const RouterView: typeof import('vue-router')['RouterView']
   const Text: typeof import('./src/components/Text.vue')['default']
+  const UniPopup: typeof import('@dcloudio/uni-ui/lib/uni-popup/uni-popup.vue')['default']
+  const UniPopupDialog: typeof import('@dcloudio/uni-ui/lib/uni-popup-dialog/uni-popup-dialog.vue')['default']
   const View: typeof import('./src/components/View.vue')['default']
 }

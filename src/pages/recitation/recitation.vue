@@ -5,7 +5,8 @@
 			<text class="title">背诵练习</text>
 			<view class="header-actions">
 				<view class="sentence-progress">
-					<text>{{ currentSentenceIndex + 1 }}/{{ sentences.length }}</text>
+					<text class="sentence-err-num">{{ errorCount }}</text><text>/{{ currentSentenceIndex + 1 }}/{{
+						sentences.length }}</text>
 				</view>
 				<!-- 修改：显示总游戏时长 -->
 				<view class="time-display">
@@ -40,7 +41,8 @@
 			<view class="available-words">
 				<text class="section-title">可用词语:</text>
 				<view class="word-list">
-					<text v-for="word in shuffledWords" :key="word" @touchstart="onAvailableWordDragStart(word, $event)"
+					<text v-for="(word, i) in shuffledWords" :key="i"
+						@touchstart="onAvailableWordDragStart(word, $event)"
 						@touchmove="onAvailableWordDragMove($event)" @touchend="onAvailableWordDragEnd" :class="['word-item', 'draggable-word', {
 							'dragging': draggingWord === word
 						}]" :style="{ pointerEvents: isDragging ? 'none' : 'auto' }">
@@ -82,7 +84,7 @@
 					</view>
 				</view>
 			</view>
-			<button @click="checkAnswer" class="check-answer-btn">检查答案</button>
+			<button @click="checkAnswer" class="check-answer-btn">确 认</button>
 		</view>
 
 		<!-- 新增：进度提示 -->
@@ -95,7 +97,7 @@
 			<button @click="prevSentence" :disabled="currentSentenceIndex === 0" class="nav-btn">上一句</button>
 			<button @click="nextSentence" :disabled="currentSentenceIndex === sentences.length - 1"
 				class="nav-btn">下一句</button>
-			<button @click="skipWord" class="nav-btn skip-btn">跳过</button>
+			<button @click="showAnswer" class="nav-btn skip-btn">查看答案</button>
 		</view>
 	</view>
 </template>
@@ -125,6 +127,7 @@ const emptyIndices = ref<number[]>([]); // 记录空位置
 const currentSentenceWords = ref<string[]>([]);
 
 // 新增变量
+const errorCount = ref(0);
 const currentSentenceIndex = ref(0);
 const sentences = ref<string[][]>([]); // 存储分割后的句子数组
 const isCompleted = ref(false);
@@ -133,14 +136,15 @@ const isCompleted = ref(false);
 const errorIndices = ref<number[]>([]);
 const segment = new Segment();
 useDefault(segment);
-// 新增：需要合并的单字数组（可以根据实际需求调整）
-const mergeSingleChars = ['辩', '法', '病', '寒', '强', '也', '之', '阳', '的', '地', '得', '了', '着', '过', '在', '于', '和', '与', '或', '而', '但', '却', '以', '为', '因', '由', '自', '从', '向', '到', '对', '于', '给', '把', '被', '让', '叫', '使', '将', '把', '被', '让', '叫', '使', '将', '把', '被', '让', '叫', '使', '将', '把', '被', '让', '叫', '使', '将', '把', '被', '让', '叫', '使', '将', '把', '被', '让', '叫', '使', '将', '把', '被', '让', '叫', '使', '将', '把', '被', '让', '叫', '使', '将', '把', '被', '让', '叫', '使', '将', '把', '被', '让', '叫', '使', '将', '把', '被', '让', '叫', '使', '将', '把', '被', '让', '叫', '使', '将', '把', '被', '让', '叫', '使', '将', '把', '被', '让', '叫', '使', '将', '把', '被', '让', '叫', '使', '将', '把', '被', '让', '叫', '使', '将', '把', '被', '让', '叫', '使', '将', '把', '被', '让', '叫', '使', '将', '把', '被', '让', '叫', '使', '将', '把', '被', '让', '叫', '使', '将'];
 
 // 新增：学习进度存储键名
 const PROGRESS_KEY = 'learningProgress';
 
 // 新增：用于存储用户输入的拼音
 const userPinyinInputs = ref<{ [key: number]: string }>({});
+
+// 新增：显示答案标记
+const showAnswerFlag = ref(false);
 
 // 新增：拖动相关变量
 const draggingIndex = ref(-1);
@@ -198,7 +202,7 @@ const showProgressHintMessage = (message: string) => {
 	progressHintText.value = message;
 	setTimeout(() => {
 		showProgressHint.value = false;
-	}, 1200);
+	}, 1000);
 };
 // 新增函数 - 在句子加载时启动计时器
 const onSentenceLoad = () => {
@@ -316,7 +320,6 @@ const onDragMove = (event: TouchEvent) => {
 	}
 
 	const elements = document.querySelectorAll('.placeholder-container');
-	console.log("move move", elements.length, isDragging.value, isDraggingFromAvailable.value);
 	if (!isDragging.value || isDraggingFromAvailable.value) return;
 
 	// 计算当前拖动的元素在列表中的位置
@@ -325,8 +328,6 @@ const onDragMove = (event: TouchEvent) => {
 
 
 	elements.forEach((el, i) => {
-		console.log("move f", i, draggingIndex.value, dragOverIndex.value);
-
 		// 检查目标位置是否是拼音输入框，如果是则不允许放置
 		if (hiddenIndices.value.includes(i)) {
 			return;
@@ -358,8 +359,6 @@ const onDragMove = (event: TouchEvent) => {
 				newDragOverIndex = i;
 			}
 		}
-
-		console.log("move e", elements.length, i, draggingIndex.value, dragOverIndex.value);
 	});
 
 	// 简化条件判断：只要找到有效位置就设置拖放目标
@@ -784,53 +783,53 @@ const moveWord = (fromIndex: number, toIndex: number) => {
 	}
 };
 
+// 修改：学习进度存储键名（基于计划ID）
+const getProgressKey = () => `learningProgress_${planId.value}`;
 
-// 新增函数 - 保存学习进度
+// 修改：保存学习进度函数
 const saveProgress = () => {
 	const progress = {
 		planId: planId.value,
 		currentSentenceIndex: currentSentenceIndex.value,
+		totalSentences: sentences.value.length,
 		difficulty: difficulty.value,
 		totalGameTime: totalGameTime.value, // 保存总游戏时长
 		planStartTime: planStartTime.value, // 保存计划开始时间
-		lastUpdateTime: new Date().toISOString()
+		lastUpdateTime: new Date().toISOString(),
+		errorCount: errorCount.value, // 保存错误次数
 	};
-	uni.setStorageSync(PROGRESS_KEY, progress);
+	uni.setStorageSync(getProgressKey(), progress);
 };
 
-// 修改：恢复学习进度（恢复总游戏时长）
+// 修改：恢复学习进度函数
 const restoreProgress = (): boolean => {
-	try {
-		const progress = uni.getStorageSync(PROGRESS_KEY);
-		if (progress && progress.planId === planId.value) {
-			// 检查进度是否有效
-			if (progress.currentSentenceIndex >= 0 && progress.currentSentenceIndex < sentences.value.length) {
-				currentSentenceIndex.value = progress.currentSentenceIndex;
-				difficulty.value = progress.difficulty;
+	const progress = uni.getStorageSync(getProgressKey());
+	if (progress && progress.planId === planId.value) {
+		// 检查进度是否有效
+		if (progress.currentSentenceIndex >= 0 && progress.currentSentenceIndex < sentences.value.length) {
+			currentSentenceIndex.value = progress.currentSentenceIndex;
+			difficulty.value = progress.difficulty;
+			errorCount.value = progress.errorCount | 0;
 
-				// 恢复总游戏时长和计划开始时间
-				if (progress.totalGameTime && progress.planStartTime) {
-					totalGameTime.value = progress.totalGameTime;
-					planStartTime.value = progress.planStartTime;
+			// 恢复总游戏时长和计划开始时间
+			if (progress.totalGameTime && progress.planStartTime) {
+				totalGameTime.value = progress.totalGameTime;
+				planStartTime.value = progress.planStartTime;
 
-					// 如果计划还在进行中，继续计时
-					if (currentSentenceIndex.value < sentences.value.length - 1) {
-						startTimer();
-					}
+				// 如果计划还在进行中，继续计时
+				if (currentSentenceIndex.value < sentences.value.length - 1) {
+					startTimer();
 				}
-				return true;
 			}
+			return true;
 		}
-		return false;
-	} catch (error) {
-		console.error('恢复学习进度失败:', error);
-		return false;
 	}
+	return false;
 };
 
-// 修改：清除学习进度（同时重置总游戏时长）
+// 修改：清除学习进度函数
 const clearProgress = () => {
-	uni.removeStorageSync(PROGRESS_KEY);
+	uni.removeStorageSync(getProgressKey());
 	totalGameTime.value = 0;
 	planStartTime.value = 0;
 	stopTimer();
@@ -842,9 +841,14 @@ const mergeSingleCharacters = (words: string[]): string[] => {
 
 	for (let i = 0; i < words.length; i++) {
 		const currentWord = words[i];
+		const lastWord = mergedWords[mergedWords.length - 1];
 
 		// 如果是单字且在合并列表中，且不是第一个词
-		if (currentWord.length === 1 && mergeSingleChars.includes(currentWord) && mergedWords.length > 0) {
+		let merge = false;
+		if (lastWord && (lastWord.length <= 1 || /[\d]$/.test(lastWord)) && currentWord.length == 1) {
+			merge = true;
+		}
+		if (merge && mergedWords.length > 0) {
 			// 合并到上一个词
 			const lastIndex = mergedWords.length - 1;
 			mergedWords[lastIndex] = mergedWords[lastIndex] + currentWord;
@@ -869,18 +873,18 @@ const loadSentences = () => {
 
 		// 处理每个计划项
 		plan.items.forEach((item: any) => {
-			let content = "";
+			// 如果是文章类型，根据articleId查找文章内容
+			const article = articles.find((a: any) => a.id === item.articleId);
 
+			let content = "";
 			// 根据不同类型获取内容
-			if (item.type === 'article' && item.articleId) {
-				// 如果是文章类型，根据articleId查找文章内容
-				const article = articles.find((a: any) => a.id === item.articleId);
+			if (item.type === 'article') {
 				if (article) {
 					content = article.content;
 				}
 			} else if (item.type === 'paragraph') {
-				// 如果是段落类型，直接使用段落内容
-				content = item.content;
+				let paragraphSentences = (article.content as string).split('\n').filter(p => p.trim().length > 0);
+				content = (item.paragraphIndices as number[]).map(index => paragraphSentences[index]).join('\n');
 			} else {
 				// 兼容旧数据结构
 				content = item.content;
@@ -919,6 +923,9 @@ const loadSentences = () => {
 
 // 修改startRecitation函数，确保计时器正确启动
 const startRecitation = () => {
+	// 重置显示答案标记
+	showAnswerFlag.value = false;
+
 	if (sentences.value.length === 0 || currentSentenceIndex.value >= sentences.value.length) return;
 
 	words.value = [...sentences.value[currentSentenceIndex.value]];
@@ -1029,6 +1036,11 @@ const shuffleArray = (array: string[]) => {
 };
 // 修改checkAnswer函数，保存答题记录时包含总游戏时长
 const checkAnswer = () => {
+	// 如果显示了答案，不允许检查
+	if (showAnswerFlag.value) {
+		nextSentence();
+		return;
+	}
 	const time = Date.now() - startTime.value;
 
 	// 获取正确的词语顺序（排除隐藏的拼音输入位置）
@@ -1051,7 +1063,7 @@ const checkAnswer = () => {
 		displayWords.value = [...currentSentenceWords.value];
 
 		// 新增：显示进度提示
-		showProgressHintMessage(`答案正确！用时：${formatTime(time)}\n${currentSentenceWords.value.join('')}`);
+		showProgressHintMessage(`答案正确！用时：${formatTime(time)}}`);
 
 
 		const record = {
@@ -1074,8 +1086,7 @@ const checkAnswer = () => {
 				title: "已完成所有题目！",
 				icon: "success"
 			});
-			clearProgress();
-		}
+		};
 	} else {
 		// 答案错误时，标记错误的词语
 		const minLength = Math.min(userWords.length, correctOrder.length);
@@ -1092,8 +1103,28 @@ const checkAnswer = () => {
 		}
 	}
 };
-// 修改nextSentence函数，添加进度保存和提示
+
+// 修改nextSentence函数，添加显示答案的记录
 const nextSentence = () => {
+	// 如果当前显示了答案，记录为错误
+	if (showAnswerFlag.value) {
+		const record = {
+			planId: planId.value,
+			sentenceIndex: currentSentenceIndex.value,
+			correct: false, // 标记为错误
+			time: 0, // 显示答案不计时
+			totalGameTime: totalGameTime.value,
+			date: new Date().toISOString(),
+			showAnswer: true // 标记为显示答案
+		};
+		const records = uni.getStorageSync("recitationRecords") || [];
+		records.push(record);
+		uni.setStorageSync("recitationRecords", records);
+
+		// 重置显示答案标记
+		showAnswerFlag.value = false;
+	}
+
 	if (currentSentenceIndex.value < sentences.value.length - 1) {
 		currentSentenceIndex.value++;
 		startRecitation();
@@ -1102,8 +1133,11 @@ const nextSentence = () => {
 	}
 };
 
-// 修改prevSentence函数，添加进度保存和提示
+// 修改prevSentence函数，重置显示答案标记
 const prevSentence = () => {
+	// 重置显示答案标记
+	showAnswerFlag.value = false;
+
 	if (currentSentenceIndex.value > 0) {
 		currentSentenceIndex.value--;
 		startRecitation();
@@ -1180,20 +1214,32 @@ const showInput = (index: number) => {
 	pinyinInput.value = "";
 };
 
-// 跳过当前词语
-const skipWord = () => {
-	if (currentWordIndex.value >= 0) {
-		// 直接显示该词语
-		const index = hiddenIndices.value.indexOf(currentWordIndex.value);
-		if (index > -1) {
-			hiddenIndices.value.splice(index, 1);
+// 显示答案
+const showAnswer = () => {
+	if (showAnswerFlag.value) return;
+	
+	// 显示正确答案
+	const correctOrder = currentSentenceWords.value;
+
+	// 清空用户当前顺序
+	userOrder.value = [];
+
+	// 将正确答案填充到用户顺序中
+	correctOrder.forEach((word, index) => {
+		// 跳过拼音输入框位置
+		if (!hiddenIndices.value.includes(index)) {
+			userOrder.value.push({ position: index, word });
 		}
-		showPinyinInput.value = false;
-		pinyinInput.value = "";
-		currentWordIndex.value = -1;
-		currentWord.value = "";
-	}
+	});
+
+	// 清空可用词语
+	shuffledWords.value = [];
+
+	// 设置显示答案标记
+	showAnswerFlag.value = true;
+	errorCount.value++;
 };
+
 
 // 新增：重置学习进度
 const resetProgress = () => {
@@ -1219,6 +1265,7 @@ const onPinyinInput = (index: number) => {
 	// 可以在这里添加实时验证或其他逻辑
 	console.log(`用户在索引 ${index} 处输入了拼音: ${userPinyinInputs.value[index]}`);
 };
+
 </script>
 <style>
 .recitation-container {
@@ -1279,6 +1326,10 @@ const onPinyinInput = (index: number) => {
 	font-size: 30rpx;
 	font-weight: bold;
 	backdrop-filter: blur(10rpx);
+}
+
+.sentence-err-num {
+	color: #e64340;
 }
 
 .section-title {

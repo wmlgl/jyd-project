@@ -4,7 +4,7 @@
 		{
 			"path": "pages/home/home",
 			"style": {
-				"navigationBarTitleText": "记忆点APP"
+				"navigationBarTitleText": "记忆点"
 			}
 		},
 		{
@@ -28,7 +28,7 @@
 		{
 			"path": "pages/recitation/recitation",
 			"style": {
-				"navigationBarTitleText": "背诵"
+				"navigationBarTitleText": "背诵学习"
 			}
 		},
 		{
@@ -40,19 +40,16 @@
 		{
 			"path": "pages/about/about",
 			"style": {
-				"navigationBarTitleText": "关于APP"
+				"navigationBarTitleText": "关于应用"
 			}
 		}
 	],
 	"easycom": {
-		"autoScan": true,
-		"custom": {
-			"^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue"
-		}
+		"autoScan": true
 	},
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
-		"navigationBarTitleText": "记忆点APP",
+		"navigationBarTitleText": "记忆点",
 		"navigationBarBackgroundColor": "#F8F8F8",
 		"backgroundColor": "#F8F8F8"
 	}

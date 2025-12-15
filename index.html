@@ -1,20 +1,45 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <script>
-      var coverSupport = 'CSS' in window && typeof CSS.supports === 'function' && (CSS.supports('top: env(a)') ||
-        CSS.supports('top: constant(a)'))
-      document.write(
-        '<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0' +
-        (coverSupport ? ', viewport-fit=cover' : '') + '" />')
-    </script>
-    <title></title>
-    <!--preload-links-->
-    <!--app-context-->
-  </head>
-  <body>
-    <div id="app"><!--app-html--></div>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+<html lang="zh-CN">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	<meta name="theme-color" content="#4a90e2">
+	<meta name="description" content="记忆点 - 一个基于uniapp的开源本地背诵文章应用">
+	<meta name="keywords" content="记忆点,背诵,文章阅读,学习工具">
+	<meta name="author" content="wmlgl@com.github">
+
+	<!-- PWA Manifest -->
+	<link rel="manifest" href="/static/manifest.json">
+
+	<!-- Apple Touch Icons -->
+	<link rel="apple-touch-icon" href="/static/icons/icon-152x152.png">
+	<link rel="apple-touch-startup-image" href="/static/icons/icon-512x512.png">
+
+	<!-- Theme Color for Mobile Browsers -->
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="default">
+	<meta name="apple-mobile-web-app-title" content="记忆点">
+
+	<!-- Microsoft Tile -->
+	<meta name="msapplication-TileColor" content="#4a90e2">
+	<meta name="msapplication-TileImage" content="/static/icons/icon-144x144.png">
+
+	<script>
+		var coverSupport = 'CSS' in window && typeof CSS.supports === 'function' && (CSS.supports('top: env(a)') ||
+			CSS.supports('top: constant(a)'))
+		document.write(
+			'<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0' +
+			(coverSupport ? ', viewport-fit=cover' : '') + '" />')
+	</script>
+	<title>记忆点</title>
+	<!--preload-links-->
+	<!--app-context-->
+</head>
+
+<body>
+	<div id="app"><!--app-html--></div>
+	<script type="module" src="/src/main.ts"></script>
+</body>
+
 </html>

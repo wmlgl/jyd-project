@@ -1,5 +1,9 @@
 # 记忆点 APP
 
+体验地址：https://wmlgl.github.io/jyd-project
+
+<img src="./src/static/icons/icon-144x144.svg" /> 
+
 一个基于uniapp的开源本地APP，专为背诵文章设计。本应用提供完整的背诵学习解决方案，支持背诵计划管理、文章阅读、背诵效果分析等功能。
 
 ## 主要功能
@@ -55,9 +59,6 @@ npm install
 # H5开发
 npm run dev:h5
 
-# 微信小程序开发
-npm run dev:mp-weixin
-
 # 其他平台开发请参考package.json中的脚本命令
 ```
 
@@ -65,9 +66,6 @@ npm run dev:mp-weixin
 ```bash
 # H5构建
 npm run build:h5
-
-# 微信小程序构建
-npm run build:mp-weixin
 ```
 
 ## 开发要求
@@ -83,9 +81,9 @@ npm run build:mp-weixin
 - [x] 计划管理（创建、编辑、删除计划）
 - [x] 文章书签和继续阅读进度
 - [x] 背诵难度设置（隐藏部分词语让用户通过拼音首字母输入）
+- [x] 拼音首字母输入支持
 
 ### 🔄 进行中/待完成
-- [ ] 拼音输入支持
 - [ ] 遗忘曲线算法实现
 - [ ] 数据持久化和云同步
 - [ ] UI美化和响应式设计
@@ -98,3 +96,55 @@ npm run build:mp-weixin
 ## 许可证
 
 本项目采用MIT许可证，详见LICENSE文件。
+
+## 风格
+按下面的风格重新设计页面（不是所有元素都必须，只是大方向），要专业而简便，层次分明：页面结构框架
+布局结构
+容器层: 全屏容器 + 内边距
+内容区: 垂直堆叠的多个section
+底部固定栏: 固定定位的操作按钮区域
+组件模式
+输入卡片: 标签+输入框+辅助信息
+选择卡片: 平铺选项卡，支持选中状态
+步骤流程: 数字标识的分步操作引导
+内容列表: 滚动区域内的项目展示
+操作按钮: 渐变背景的主要操作按钮
+设计规范
+圆角卡片设计 (16rpx)
+阴影效果增强层次感
+蓝色主色调用于选中状态
+底部固定布局
+响应式间距和字体大小
+交互特征
+卡片式选择交互
+步骤引导流程
+实时状态反馈
+模态操作确认
+
+## 功能展示
+<img src="./src/static/screenshots/s1.png" />
+
+首页
+
+<img src="./src/static/screenshots/s2.png" />
+
+导入文章：支持txt, html文件集合的zip压缩包
+
+<img src="./src/static/screenshots/s3.png" />
+
+查看文章详情
+
+<img src="./src/static/screenshots/s4.png" />
+
+背诵计划：选择文章或段落创建计划
+
+<img src="./src/static/screenshots/s5.png" />
+
+趣味背诵：拆分句子，用户拖动或点击进行排序
+
+<img src="./src/static/screenshots/s6.png" />
+
+趣味背诵：中级难度，方框需要用户输入拼音首字母
+
+## ❤ 支持作者 ❤
+<img src="./src/static/alipay.png" height="200px" /><img src="./src/static/wxpay.png" height="200px" style="margin-left:2em" />

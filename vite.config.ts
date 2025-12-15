@@ -11,10 +11,11 @@ fs.readdirSync("./src/components").forEach((file) => {
 		scanComponents.push(file.slice(0, -4));
 	}
 });
+fs.writeFileSync("./src/static/date", String(Date.now()));
 
 // https://vitejs.dev/config/
 export default defineConfig({
-	base:"/jyd-project",
+	base: "/jyd-project/",
 	plugins: [
 		// @ts-ignore
 		uni.default(),
