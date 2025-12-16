@@ -292,14 +292,9 @@ const saveArticles = () => {
 // 加载分类
 const loadCategories = async () => {
 	try {
-		// 获取当前页面的基础URL
-		const pages = getCurrentPages();
-		const currentPage = pages[pages.length - 1];
-		const route = currentPage.route;
-		const fullPath = currentPage.options ? `${route}?${Object.keys(currentPage.options).map(key => `${key}=${currentPage.options[key]}`).join('&')}` : route;
-
 		// 从URL获取分类数据
-		const response = await fetch(`${config.LIST_YAML}list.yaml`);
+		baseURL.value = config.LIST_YAML.replace("list.yaml", "")
+		const response = await fetch(config.LIST_YAML);
 		const yamlText = await response.text();
 		categories.value = parseYaml(yamlText);
 
