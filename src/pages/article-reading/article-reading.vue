@@ -4,29 +4,99 @@
 		<view class="header-section">
 			<view class="title-card">
 				<text class="title">文章列表</text>
+				<!-- 添加设置按钮 -->
+				<view class="settings-icon" @click="showCategorySettings">
+					<text>⚙️</text>
+				</view>
 			</view>
+		</view>
+
+		<!-- 分类订阅区域 -->
+		<view class="category-section">
+			<scroll-view class="category-scroll" scroll-x>
+				<view class="category-list">
+					<view v-for="(subscribed, category) in categorySubscriptions" :key="category"
+						@click="toggleCategorySubscription(category)"
+						:class="['category-item', { active: subscribed }]">
+						<text class="category-name">{{ category }}</text>
+					</view>
+				</view>
+			</scroll-view>
 		</view>
 
 		<!-- 内容区域 -->
 		<view class="content-section">
 			<scroll-view class="article-list-scroll" scroll-y>
-				<view class="article-list">
-					<view v-for="article in articles" :key="article.id" class="article-item-card">
-						<view @click="navigateToDetail(article)" class="article-content">
-							<text class="article-title">{{ article.title }}</text>
-							<view class="indicators">
-								<text v-if="isBookmarked(article.id)" class="bookmark">📖</text>
-								<text v-if="hasProgress(article.id)" class="progress">📍</text>
+				<!-- 分类文章列表 -->
+				<view v-for="(articlesList, category) in categories" :key="category" class="category-group">
+					<view class="category-header">
+						<text class="category-title">{{ category }}</text>
+					</view>
+
+					<!-- 该分类下的文章 -->
+					<view class="article-list">
+						<!-- 已导入的文章 -->
+						<view v-for="article in getArticlesByCategory(category)" :key="article.id"
+							class="article-item-card imported">
+							<view @click="navigateToDetail(article)" class="article-content">
+								<text class="article-title">{{ article.title }}</text>
+								<view class="article-meta">
+									<view class="indicators">
+										<text v-if="isBookmarked(article.id)" class="bookmark">📖</text>
+										<text v-if="hasProgress(article.id)" class="progress">📍</text>
+									</view>
+								</view>
+							</view>
+							<view class="article-actions">
+								<button @click.stop="showDeleteConfirm(article.id)"
+									class="action-btn delete-btn">删除</button>
 							</view>
 						</view>
-						<view class="article-actions">
-							<button @click.stop="showDeleteConfirm(article.id)" class="action-btn delete-btn">删除</button>
+
+						<!-- 未导入的文章 -->
+						<view v-for="fileName in getUnimportedArticles(category, articlesList)" :key="fileName"
+							class="article-item-card not-imported">
+							<view class="article-content">
+								<text class="article-title">{{ fileName }}</text>
+							</view>
+							<view class="article-actions">
+								<button @click.stop="downloadAndImportArticle(fileName, category)"
+									class="action-btn download-btn">
+									下载
+								</button>
+							</view>
 						</view>
 					</view>
 				</view>
-				
+
+				<!-- 本地导入的文章 -->
+				<!-- <view v-if="getLocalImportedArticles().length > 0" class="category-group">
+					<view class="category-header">
+						<text class="category-title">本地导入</text>
+					</view>
+
+					<view class="article-list">
+						<view v-for="article in getLocalImportedArticles()" :key="article.id"
+							class="article-item-card imported">
+							<view @click="navigateToDetail(article)" class="article-content">
+								<text class="article-title">{{ article.title }}</text>
+								<view class="article-meta">
+									<view class="indicators">
+										<text v-if="isBookmarked(article.id)" class="bookmark">📖</text>
+										<text v-if="hasProgress(article.id)" class="progress">📍</text>
+									</view>
+								</view>
+							</view>
+							<view class="article-actions">
+								<button @click.stop="showDeleteConfirm(article.id)"
+									class="action-btn delete-btn">删除</button>
+							</view>
+						</view>
+					</view>
+				</view> -->
+
 				<!-- 空状态提示 -->
-				<view v-if="articles.length === 0" class="empty-state">
+				<view v-if="getAllArticlesCount() === 0" class="empty-state">
 					<text class="empty-text">暂无文章</text>
 					<text class="empty-subtext">点击下方按钮导入文章</text>
 				</view>
@@ -44,20 +114,36 @@
 
 		<!-- 删除确认弹窗 -->
 		<uni-popup ref="deletePopup" type="dialog">
-			<uni-popup-dialog 
-				mode="base" 
-				title="确认删除" 
-				content="确定要删除这篇文章吗？" 
-				@confirm="confirmDelete"
+			<uni-popup-dialog mode="base" title="确认删除" content="确定要删除这篇文章吗？" @confirm="confirmDelete"
 				@cancel="cancelDelete">
 			</uni-popup-dialog>
+		</uni-popup>
+
+		<!-- 分类订阅设置弹窗 -->
+		<uni-popup ref="settingsPopup" type="center">
+			<view class="settings-popup">
+				<view class="popup-header">
+					<text class="popup-title">分类订阅设置</text>
+				</view>
+				<scroll-view class="settings-content" scroll-y>
+					<view v-for="(subscribed, category) in categorySubscriptions" :key="category" class="setting-item">
+						<text class="category-label">{{ category }}</text>
+						<switch :checked="subscribed"
+							@change="e => toggleCategorySubscriptionPopup(category, e.detail.value)" />
+					</view>
+				</scroll-view>
+				<view class="popup-footer">
+					<button @click="closeSettings" class="close-btn">关闭</button>
+				</view>
+			</view>
 		</uni-popup>
 	</view>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import type UniPopup from '@dcloudio/uni-ui/lib/uni-popup/uni-popup.vue';
+import config from "../../config";
 // #ifdef H5
 import JSZip from 'jszip';
 // #endif
@@ -66,17 +152,126 @@ interface Article {
 	id: string;
 	title: string;
 	content: string;
+	category?: string; // 添加分类字段
 }
 
-const articles = ref<Article[]>([]);
-const deletePopup = ref<InstanceType<typeof UniPopup> | null>(null);
-const deletingArticleId = ref("");
+interface CategorySubscription {
+	[category: string]: boolean;
+}
 
-// 组件挂载时加载文章
-onMounted(() => {
-	loadArticles();
+// 获取指定分类已导入的文章
+const getArticlesByCategory = (category: string) => {
+	return articles.value.filter(article => article.category === category);
+};
+
+// 获取指定分类未导入的文章
+const getUnimportedArticles = (category: string, articlesList: string[]) => {
+	// 获取已导入的文章标题
+	const importedTitles = articles.value
+		.filter(article => article.category === category)
+		.map(article => article.title);
+
+	// 返回未导入的文章
+	return articlesList.filter(fileName => !importedTitles.includes(fileName));
+};
+
+// 获取本地导入的文章
+const getLocalImportedArticles = () => {
+	return articles.value.filter(article => article.category === "本地导入");
+};
+
+// 获取所有文章数量
+const getAllArticlesCount = () => {
+	// 计算所有分类中的文章数量（包括已导入和未导入的）
+	let count = articles.value.length; // 已导入的文章
+
+	// 加上未导入的文章
+	for (const category in categories.value) {
+		const articlesList = categories.value[category];
+		const importedTitles = articles.value
+			.filter(article => article.category === category)
+			.map(article => article.title);
+
+		const unimportedCount = articlesList.filter(fileName => !importedTitles.includes(fileName)).length;
+		count += unimportedCount;
+	}
+
+	return count;
+};
+
+// 简单的YAML解析函数
+const parseYaml = (yamlString: string): Record<string, string[]> => {
+	const result: Record<string, string[]> = {};
+	let currentCategory = "";
+
+	const lines = yamlString.split('\n');
+
+	for (const line of lines) {
+		// 跳过空行和注释行
+		if (line.trim() === "" || line.trim().startsWith('#')) continue;
+
+		// 检查是否是分类（以冒号结尾）
+		if (line.trim().endsWith(':')) {
+			currentCategory = line.trim().slice(0, -1); // 移除冒号
+			result[currentCategory] = [];
+		}
+		// 检查是否是文章条目（以短横线开头）
+		else if (line.trim().startsWith('-') && currentCategory) {
+			const articleName = line.trim().substring(1).trim(); // 移除短横线
+			result[currentCategory].push(articleName);
+		}
+	}
+
+	return result;
+};
+
+const articles = ref<Article[]>([]);
+const categories = ref<Record<string, string[]>>({});
+const categorySubscriptions = ref<CategorySubscription>({});
+const deletePopup = ref<InstanceType<typeof UniPopup> | null>(null);
+const settingsPopup = ref<InstanceType<typeof UniPopup> | null>(null);
+const deletingArticleId = ref("");
+const baseURL = ref(""); // 存储基础URL
+
+// 计算订阅的文章
+const subscribedArticles = computed(() => {
+	// 如果没有订阅任何分类，显示所有文章
+	const hasSubscriptions = Object.values(categorySubscriptions.value).some(subscribed => subscribed);
+	if (!hasSubscriptions) {
+		return articles.value;
+	}
+
+	// 只显示订阅分类的文章
+	return articles.value.filter(article => {
+		if (!article.category) return true; // 没有分类的文章总是显示
+		return categorySubscriptions.value[article.category] || false;
+	});
 });
 
+// 显示分类设置弹窗
+const showCategorySettings = () => {
+	settingsPopup.value?.open();
+};
+
+// 关闭分类设置弹窗
+const closeSettings = () => {
+	settingsPopup.value?.close();
+};
+
+// 在设置弹窗中切换分类订阅状态
+const toggleCategorySubscriptionPopup = (category: string, subscribed: boolean) => {
+	categorySubscriptions.value[category] = subscribed;
+	saveCategorySubscriptions();
+};
+
+// 组件挂载时加载文章和分类
+onMounted(() => {
+	loadArticles();
+	loadCategories();
+	loadCategorySubscriptions();
+});
+
+// 加载文章
 const loadArticles = () => {
 	const savedArticles = uni.getStorageSync("articles");
 	if (savedArticles && savedArticles.length > 0) {
@@ -84,21 +279,124 @@ const loadArticles = () => {
 	} else {
 		// 只有在没有保存的文章时才显示默认文章
 		articles.value = [
-			{ id: "1", title: "欢迎使用背诵应用", content: "请点击右下角的导入按钮来添加您的文章。" },
+			{ id: "1", title: "欢迎使用背诵应用", content: "请点击右下角的导入按钮来添加您的文章。", category: "本地导入" },
 		];
 	}
 };
 
+// 保存文章
 const saveArticles = () => {
 	uni.setStorageSync("articles", articles.value);
 };
 
+// 加载分类
+const loadCategories = async () => {
+	try {
+		// 获取当前页面的基础URL
+		const pages = getCurrentPages();
+		const currentPage = pages[pages.length - 1];
+		const route = currentPage.route;
+		const fullPath = currentPage.options ? `${route}?${Object.keys(currentPage.options).map(key => `${key}=${currentPage.options[key]}`).join('&')}` : route;
+
+		// 从URL获取分类数据
+		const response = await fetch(`${config.LIST_YAML}list.yaml`);
+		const yamlText = await response.text();
+		categories.value = parseYaml(yamlText);
+
+		// 初始化分类订阅状态
+		for (const category in categories.value) {
+			if (!(category in categorySubscriptions.value)) {
+				categorySubscriptions.value[category] = true; // 默认订阅所有分类
+			}
+		}
+
+		// 确保"本地导入"分类始终存在
+		if (!categories.value["本地导入"]) {
+			categories.value["本地导入"] = [];
+		}
+	} catch (error) {
+		console.error('加载分类失败:', error);
+		// 如果无法从URL加载，使用默认分类
+		categories.value = {
+			"本地导入": []
+		};
+
+		// 初始化分类订阅状态
+		for (const category in categories.value) {
+			if (!(category in categorySubscriptions.value)) {
+				categorySubscriptions.value[category] = true;
+			}
+		}
+	}
+};
+
+// 下载并导入指定文章
+const downloadAndImportArticle = async (fileName: string, category: string) => {
+	try {
+		// 显示加载提示
+		uni.showLoading({
+			title: '下载中...'
+		});
+
+		// 构建文章URL（与list.yaml在同一目录）
+		const articleURL = `${baseURL.value}${encodeURIComponent(fileName)}`;
+
+		// 下载文章
+		const response = await fetch(articleURL);
+		if (!response.ok) {
+			throw new Error(`下载失败: ${response.status} ${response.statusText}`);
+		}
+
+		// 获取文章内容
+		const content = await response.text();
+
+		// 处理文章内容
+		processFileContent(content, category, fileName);
+
+		// 隐藏加载提示
+		uni.hideLoading();
+
+		uni.showToast({
+			title: "下载成功",
+			icon: "success"
+		});
+	} catch (error) {
+		uni.hideLoading();
+		console.error('下载文章失败:', error);
+		uni.showToast({
+			title: "下载失败",
+			icon: "error"
+		});
+	}
+};
+
+// 加载分类订阅状态
+const loadCategorySubscriptions = () => {
+	const savedSubscriptions = uni.getStorageSync("categorySubscriptions");
+	if (savedSubscriptions) {
+		categorySubscriptions.value = savedSubscriptions;
+	}
+};
+
+// 保存分类订阅状态
+const saveCategorySubscriptions = () => {
+	uni.setStorageSync("categorySubscriptions", categorySubscriptions.value);
+};
+
+// 切换分类订阅状态
+const toggleCategorySubscription = (category: string) => {
+	categorySubscriptions.value[category] = !categorySubscriptions.value[category];
+	saveCategorySubscriptions();
+};
+
+// 导航到文章详情
 const navigateToDetail = (article: Article) => {
 	uni.navigateTo({
 		url: `/pages/article-detail/article-detail?id=${article.id}`,
 	});
 };
 
+// 导入文章
 const importArticle = () => {
 	uni.chooseFile({
 		count: 1,
@@ -126,7 +424,7 @@ const importArticle = () => {
 	});
 };
 
-// 新增处理ZIP文件的函数
+// 处理ZIP文件
 const handleZipFile = (filePath: string) => {
 	// #ifdef H5
 	// 在H5平台上使用fetch而不是uni.getFileSystemManager
@@ -170,7 +468,7 @@ const handleZipFile = (filePath: string) => {
 				});
 				if (contents.length) {
 					Promise.all(contents).then((textContents) => {
-						processFileContent(textContents.join("\n"));
+						processFileContent(textContents.join("\n"), "本地导入");
 					});
 				}
 			}).catch(() => {
@@ -229,7 +527,7 @@ const handleZipFile = (filePath: string) => {
 
 						// 转换HTML为纯文本
 						const textContent = convertHtmlToText(decodedContent);
-						processFileContent(textContent);
+						processFileContent(textContent, "本地导入");
 					});
 				} else {
 					uni.showToast({
@@ -274,7 +572,7 @@ const detectEncodingFromHtml = (content: Uint8Array): string => {
 	return 'utf-8';
 };
 
-// 新增HTML转文本函数
+// HTML转文本函数
 const convertHtmlToText = (html: string): string => {
 	try {
 		// 创建一个临时div来解析HTML
@@ -296,6 +594,7 @@ const convertHtmlToText = (html: string): string => {
 	}
 }
 
+// 处理文本文件
 const handleTextFile = (filePath: string, file: any) => {
 	// #ifdef H5
 	// H5平台使用FileReader
@@ -326,7 +625,7 @@ const handleTextFile = (filePath: string, file: any) => {
 		encoding: "utf8",
 		success: (readRes) => {
 			const content = readRes.data as string;
-			processFileContent(content);
+			processFileContent(content, "本地导入");
 		},
 		fail: () => {
 			uni.showToast({
@@ -345,7 +644,7 @@ const tryDecodeText = (arrayBuffer: ArrayBuffer) => {
 	const utf8Text = utf8Decoder.decode(arrayBuffer);
 
 	if (isValidChineseText(utf8Text)) {
-		processFileContent(utf8Text);
+		processFileContent(utf8Text, "本地导入");
 		return;
 	}
 
@@ -355,7 +654,7 @@ const tryDecodeText = (arrayBuffer: ArrayBuffer) => {
 		const gbkText = gbkDecoder.decode(arrayBuffer);
 
 		if (isValidChineseText(gbkText)) {
-			processFileContent(gbkText);
+			processFileContent(gbkText, "本地导入");
 			return;
 		}
 	} catch (e) {
@@ -368,7 +667,7 @@ const tryDecodeText = (arrayBuffer: ArrayBuffer) => {
 		const gb2312Text = gb2312Decoder.decode(arrayBuffer);
 
 		if (isValidChineseText(gb2312Text)) {
-			processFileContent(gb2312Text);
+			processFileContent(gb2312Text, "本地导入");
 			return;
 		}
 	} catch (e) {
@@ -376,7 +675,7 @@ const tryDecodeText = (arrayBuffer: ArrayBuffer) => {
 	}
 
 	// 如果都失败，使用默认UTF-8解码并提示可能存在问题
-	processFileContent(utf8Text);
+	processFileContent(utf8Text, "本地导入");
 	uni.showToast({
 		title: "文件可能编码不匹配",
 		icon: "none",
@@ -390,7 +689,7 @@ const readFileWithEncoding = (file: File) => {
 	utf8Reader.onload = (e) => {
 		const content = e.target?.result as string;
 		if (isValidChineseText(content)) {
-			processFileContent(content);
+			processFileContent(content, "本地导入");
 		} else {
 			// UTF-8失败，尝试GBK解码
 			tryGBKDecoding(file);
@@ -409,13 +708,13 @@ const tryGBKDecoding = (file: File) => {
 				const decoder = new TextDecoder('gbk');
 				const content = decoder.decode(arrayBuffer);
 				if (isValidChineseText(content)) {
-					processFileContent(content);
+					processFileContent(content, "本地导入");
 				} else {
 					// 尝试GB2312
 					const decoder2312 = new TextDecoder('gb2312');
 					const content2312 = decoder2312.decode(arrayBuffer);
 					if (isValidChineseText(content2312)) {
-						processFileContent(content2312);
+						processFileContent(content2312, "本地导入");
 					} else {
 						showEncodingError();
 					}
@@ -451,15 +750,17 @@ const isValidChineseText = (text: string): boolean => {
 	return chineseChars && (chineseChars.length / totalChars > 0.15);
 };
 
-const processFileContent = (content: string) => {
+// 处理文件内容
+const processFileContent = (content: string, category: string = "本地导入", fileName?: string) => {
 	const lines = content.split("\n");
-	const title = lines[0].trim();
+	const title = fileName || lines[0].trim();
 	const body = lines.slice(1).join("\n").trim();
 
 	const newArticle: Article = {
 		id: Date.now().toString(),
 		title,
 		content: body,
+		category // 添加分类信息
 	};
 
 	articles.value.push(newArticle);
@@ -509,7 +810,8 @@ const cancelDelete = () => {
 	display: flex;
 	flex-direction: column;
 	background-color: #f5f6f8;
-	padding-bottom: 140rpx; /* 为底部固定栏留出空间 */
+	padding-bottom: 140rpx;
+	/* 为底部固定栏留出空间 */
 }
 
 /* 标题区域样式 */
@@ -517,12 +819,16 @@ const cancelDelete = () => {
 	padding: 20rpx;
 	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 	box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
+	position: relative;
 }
 
 .title-card {
 	background: transparent;
 	border-radius: 16rpx;
 	padding: 30rpx 20rpx;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
 }
 
 .title {
@@ -530,6 +836,49 @@ const cancelDelete = () => {
 	font-weight: bold;
 	color: white;
 	line-height: 1.4;
+}
+
+.settings-icon {
+	font-size: 36rpx;
+	color: white;
+	cursor: pointer;
+	padding: 10rpx;
+}
+
+/* 分类区域样式 */
+.category-section {
+	padding: 20rpx;
+	background-color: #ffffff;
+	border-bottom: 1rpx solid #eee;
+}
+
+.category-scroll {
+	width: 100%;
+	white-space: nowrap;
+}
+
+.category-list {
+	display: inline-block;
+}
+
+.category-item {
+	display: inline-block;
+	padding: 16rpx 24rpx;
+	margin-right: 20rpx;
+	background-color: #f0f0f0;
+	border-radius: 32rpx;
+	font-size: 28rpx;
+	color: #666;
+	transition: all 0.3s ease;
+}
+
+.category-item.active {
+	background: linear-gradient(90deg, #007aff, #00d4ff);
+	color: white;
+}
+
+.category-name {
+	display: block;
 }
 
 /* 内容区域样式 */
@@ -574,6 +923,20 @@ const cancelDelete = () => {
 	display: block;
 	margin-bottom: 10rpx;
 	word-break: break-word;
+}
+
+.article-meta {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.article-category {
+	font-size: 24rpx;
+	color: #007aff;
+	background-color: rgba(0, 122, 255, 0.1);
+	padding: 4rpx 12rpx;
+	border-radius: 8rpx;
 }
 
 .indicators {
@@ -670,15 +1033,106 @@ const cancelDelete = () => {
 		max-width: 750rpx;
 		margin: 0 auto;
 	}
-	
+
 	.header-section {
 		border-radius: 0 0 16rpx 16rpx;
 	}
-	
+
 	.fixed-bottom-bar {
 		max-width: 750rpx;
 		left: 50%;
 		transform: translateX(-50%);
 	}
+}
+
+/* 分类组样式 */
+.category-group {
+	margin-bottom: 40rpx;
+}
+
+.category-header {
+	padding: 20rpx;
+	background-color: #f0f0f0;
+	border-radius: 8rpx;
+	margin-bottom: 20rpx;
+}
+
+.category-title {
+	font-size: 30rpx;
+	font-weight: bold;
+	color: #333;
+}
+
+/* 已导入文章卡片样式 */
+.article-item-card.imported {
+	border-left: 8rpx solid #007aff;
+}
+
+/* 未导入文章卡片样式 */
+.article-item-card.not-imported {
+	border-left: 8rpx solid #ff9500;
+	opacity: 0.8;
+}
+
+/* 下载按钮样式 */
+.download-btn {
+	background-color: #007aff;
+	color: white;
+}
+
+/* 设置弹窗样式 */
+.settings-popup {
+	width: 80%;
+	background: #fff;
+	border-radius: 16rpx;
+	max-height: 80vh;
+	display: flex;
+	flex-direction: column;
+}
+
+.popup-header {
+	padding: 30rpx;
+	text-align: center;
+	border-bottom: 1rpx solid #eee;
+}
+
+.popup-title {
+	font-size: 32rpx;
+	font-weight: bold;
+	color: #333;
+}
+
+.settings-content {
+	flex: 1;
+	padding: 20rpx;
+	max-height: 60vh;
+}
+
+.setting-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 20rpx;
+	border-bottom: 1rpx solid #f0f0f0;
+}
+
+.category-label {
+	font-size: 28rpx;
+	color: #333;
+}
+
+.popup-footer {
+	padding: 20rpx;
+	text-align: center;
+	border-top: 1rpx solid #eee;
+}
+
+.close-btn {
+	background: #007aff;
+	color: white;
+	padding: 15rpx 30rpx;
+	border-radius: 8rpx;
+	font-size: 28rpx;
+	border: none;
 }
 </style>

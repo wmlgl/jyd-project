@@ -52,6 +52,7 @@ declare global {
   const toRefs: typeof import('vue').toRefs
   const toValue: typeof import('vue').toValue
   const triggerRef: typeof import('vue').triggerRef
+  const uni: UniNamespace.Uni
   const unref: typeof import('vue').unref
   const useAttrs: typeof import('vue').useAttrs
   const useCssModule: typeof import('vue').useCssModule

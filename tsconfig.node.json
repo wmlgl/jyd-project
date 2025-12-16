@@ -1,0 +1,33 @@
+{
+	"compilerOptions": {
+		"sourceMap": true,
+		"baseUrl": ".",
+		"paths": {
+			"@/*": [
+				"./src/*"
+			]
+		},
+		"lib": [
+			"esnext",
+			"dom"
+		],
+		"types": [
+			"@dcloudio/types",
+			"node"
+		],
+		"noImplicitAny": false,
+		// 强制 TypeScript 处理装饰器
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
+		"target": "ES2020",
+		"useDefineForClassFields": false,
+		"verbatimModuleSyntax": false,
+		// 确保装饰器被正确转换
+		"module": "ESNext",
+		"moduleResolution": "Node"
+	},
+	"include": [
+		"tools/**/*.ts",
+		"vite.config.ts",
+	]
+}
