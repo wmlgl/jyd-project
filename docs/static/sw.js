@@ -6,10 +6,10 @@ let currentAppVersion = '';
 const BASE_URL = location.pathname.substring(0, location.pathname.length - 12);
 const DATE_FILE_URL = BASE_URL + 'static/date';
 const urlsToCache = [
-	location.pathname,
-	location.pathname + 'index.html',
-	location.pathname + 'static/manifest.json',
-	location.pathname + 'static/sw.js',
+	BASE_URL,
+	BASE_URL + 'index.html',
+	BASE_URL + 'static/manifest.json',
+	BASE_URL + 'static/sw.js',
 	DATE_FILE_URL, // 缓存date文件用于版本检查
 ];
 
